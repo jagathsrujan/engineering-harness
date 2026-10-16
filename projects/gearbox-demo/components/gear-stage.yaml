@@ -1,0 +1,236 @@
+component:
+  id: cmp.gear-stage
+  name: Spur stage
+  description: 'External spur gear pair with Lewis bending stress check. Declares the gear ratio, pitch diameters, transmitted
+    torque, tangential force and tooth safety factor; references motor parameters and feeds shaft and bearing checks.
+
+    '
+  ports:
+  - id: cmp.gear-stage#p-port-speed-in
+    role: potential
+    unit: rad/s
+  - id: cmp.gear-stage#p-port-torque-in
+    role: flow
+    unit: N*m
+parameters:
+- id: cmp.gear-stage#z1
+  symbol: z1
+  unit: ''
+  value: 17.0
+  provenance:
+    tag: stated
+    note: pinion tooth count (pinion cut first)
+- id: cmp.gear-stage#z2
+  symbol: z2
+  unit: ''
+  value: 43.0
+  provenance:
+    tag: stated
+    note: gear tooth count to meet ratio target
+- id: cmp.gear-stage#m
+  symbol: m
+  unit: mm
+  value: 4.0
+  provenance:
+    tag: stated
+    note: standard module, chosen from catalogue
+- id: cmp.gear-stage#b1
+  symbol: b1
+  unit: mm
+  value: 28.0
+  provenance:
+    tag: assumed
+    note: face-width guess, 8*m
+- id: cmp.gear-stage#eta
+  symbol: eta
+  unit: ''
+  value: 0.95
+  provenance:
+    tag: assumed
+    note: efficiency guess before rig data; tr.rig-eta will recalibrate
+- id: cmp.gear-stage#y_f
+  symbol: y_f
+  unit: ''
+  value: 2.8
+  provenance:
+    tag: looked-up
+    note: Lewis factor from form-factor chart
+    source: Shigley's, Lewis form factor for z~17
+- id: cmp.gear-stage#sigma_flim
+  symbol: sigma_flim
+  unit: MPa
+  value: 220.0
+  provenance:
+    tag: looked-up
+    note: allowable tooth stress
+    source: steel data table, through-hardened gear steel
+- id: cmp.gear-stage#i
+  symbol: i
+  unit: ''
+  value: null
+  provenance:
+    tag: computed
+  description: Gear ratio (over 1).
+- id: cmp.gear-stage#d1
+  symbol: d1
+  unit: mm
+  value: null
+  provenance:
+    tag: computed
+  description: Pinion pitch diameter.
+- id: cmp.gear-stage#p_out
+  symbol: p_out
+  unit: kW
+  value: null
+  provenance:
+    tag: computed
+  description: Output power of the stage (after efficiency).
+- id: cmp.gear-stage#t1
+  symbol: t1
+  unit: N*m
+  value: null
+  provenance:
+    tag: computed
+  description: Torque entering the gear pair.
+- id: cmp.gear-stage#f_t
+  symbol: f_t
+  unit: N
+  value: null
+  provenance:
+    tag: computed
+  description: Tangential force at pitch point.
+- id: cmp.gear-stage#sigma_f
+  symbol: sigma_f
+  unit: MPa
+  value: null
+  provenance:
+    tag: computed
+  description: Lewis bending stress at the tooth root.
+- id: cmp.gear-stage#s_f
+  symbol: s_f
+  unit: ''
+  value: null
+  provenance:
+    tag: computed
+  description: Tooth bending safety factor.
+relations:
+- id: rl.ratio-i
+  equations:
+  - i = z2/z1
+  params:
+  - cmp.gear-stage#z2
+  - cmp.gear-stage#z1
+  - cmp.gear-stage#i
+  source:
+    kind: inline
+    ref: gear kinematics
+  review:
+    status: reviewed
+    reviewer: owner
+    at: '2026-10-16'
+    graph_version: v0.1
+- id: rl.pitch-d1
+  equations:
+  - d1 = m*z1
+  params:
+  - cmp.gear-stage#m
+  - cmp.gear-stage#z1
+  - cmp.gear-stage#d1
+  source:
+    kind: inline
+    ref: gear geometry
+  review:
+    status: reviewed
+    reviewer: owner
+    at: '2026-10-16'
+    graph_version: v0.1
+- id: rl.p-out
+  equations:
+  - p_out = eta*p_in
+  params:
+  - cmp.gear-stage#eta
+  - cmp.drive-motor#p_in
+  - cmp.gear-stage#p_out
+  source:
+    kind: textbook
+    ref: Shigley's, power flow through a gear mesh
+  review:
+    status: unreviewed
+- id: rl.input-torque
+  equations:
+  - t1 = p_out/omega_in
+  params:
+  - cmp.gear-stage#p_out
+  - cmp.drive-motor#omega_in
+  - cmp.gear-stage#t1
+  source:
+    kind: inline
+    ref: T = P/omega
+  review:
+    status: unreviewed
+- id: rl.gear-force
+  equations:
+  - f_t = 2*t1/d1
+  params:
+  - cmp.gear-stage#t1
+  - cmp.gear-stage#d1
+  - cmp.gear-stage#f_t
+  source:
+    kind: textbook
+    ref: Shigley's, tangential load at pitch point
+  review:
+    status: disputed
+    reviewer: owner
+    at: '2026-10-16'
+    graph_version: v0.1
+  rationale: plain tangential force; dynamic factor K_v withheld until duty data exists
+  rationale_by: llm
+- id: rl.tooth-stress
+  equations:
+  - sigma_f = f_t*y_f/(m*b1)
+  params:
+  - cmp.gear-stage#f_t
+  - cmp.gear-stage#y_f
+  - cmp.gear-stage#m
+  - cmp.gear-stage#b1
+  - cmp.gear-stage#sigma_f
+  source:
+    kind: textbook
+    ref: Shigley's, Lewis bending equation
+  review:
+    status: unreviewed
+- id: rl.tooth-safety-factor
+  equations:
+  - s_f = sigma_flim/sigma_f
+  params:
+  - cmp.gear-stage#sigma_flim
+  - cmp.gear-stage#sigma_f
+  - cmp.gear-stage#s_f
+  source:
+    kind: inline
+    ref: safety factor definition
+  review:
+    status: unreviewed
+requirements:
+- id: rq.tooth-safety
+  condition: s_f >= 1.5
+  params:
+  - cmp.gear-stage#s_f
+  owner: drivetrain design spec
+  rationale: tooth bending must carry a 1.5 margin per house standard
+  mode: required
+  source:
+    kind: standard
+    ref: internal house standard DS-2019 clause 4.2
+  review:
+    status: unreviewed
+test_results:
+- id: tr.rig-eta
+  param: cmp.gear-stage#eta
+  value: 0.93
+  provenance:
+    tag: measured
+  note: steady-state dynamometer run on the assembled stage
+  method: dynamometer rig run 47
+  recorded: '2026-10-14'
+  recalibrates: cmp.gear-stage#eta

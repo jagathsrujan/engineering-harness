@@ -1,0 +1,18 @@
+project:
+  id: prj.gearbox-demo
+  name: Demo two-stage gearbox (M0 spike)
+  description: >
+    Anchor demo for M0: input kinematics, gear Lewis tooth stress, shaft bending
+    plus torsion (von Mises), bearing L10 life expressed in accumulated radians,
+    and fastener preload. One packaging constraint (shaft envelope) is
+    deliberately violated to demonstrate flags; one Unknown blocks
+    bearing-life verification; one measured test result waits to recalibrate
+    the efficiency assumption. Equations are written unit-invariant in SI base.
+settings:
+  autonomy: 1
+components:
+  - components/drive-motor.yaml
+  - components/gear-stage.yaml
+  - components/shaft-1.yaml
+  - components/bearing-1.yaml
+  - components/fasteners.yaml

@@ -1,0 +1,104 @@
+component:
+  id: cmp.bearing-1
+  name: Support bearing
+  description: 'Deep-groove bearing supporting the input shaft. Life is computed from the L10 basic rating life; an unpinned
+    lubrication question blocks verified status on the life claim.
+
+    '
+  ports:
+  - id: cmp.bearing-1#p-port-reaction
+    role: potential
+    unit: N
+parameters:
+- id: cmp.bearing-1#c_bear
+  symbol: c_bear
+  unit: kN
+  value: 19.5
+  provenance:
+    tag: looked-up
+    note: basic dynamic load rating C
+    source: bearing catalogue, deep-groove 6206-class
+- id: cmp.bearing-1#n_out
+  symbol: n_out
+  unit: rpm
+  value: null
+  provenance:
+    tag: computed
+  description: Shaft speed at the bearing.
+- id: cmp.bearing-1#l10
+  symbol: l10
+  unit: rad
+  value: null
+  provenance:
+    tag: computed
+  description: 'Basic rating life expressed as accumulated rotation in radians (catalogue revolutions times 2*pi).
+
+    '
+- id: cmp.bearing-1#h_life
+  symbol: h_life
+  unit: h
+  value: null
+  provenance:
+    tag: computed
+  description: Rating life in hours.
+relations:
+- id: rl.output-speed
+  equations:
+  - n_out = n_in/i
+  params:
+  - cmp.drive-motor#n_in
+  - cmp.gear-stage#i
+  - cmp.bearing-1#n_out
+  source:
+    kind: inline
+    ref: gear train kinematics
+  review:
+    status: reviewed
+    reviewer: owner
+    at: '2026-10-16'
+    graph_version: v0.1
+- id: rl.bearing-life
+  equations:
+  - l10 = 2*pi*1e6*(c_bear/f_t)**3
+  params:
+  - cmp.bearing-1#c_bear
+  - cmp.gear-stage#f_t
+  - cmp.bearing-1#l10
+  source:
+    kind: textbook
+    ref: Shigley's, L10 life model (revolution count converted to radians)
+  review:
+    status: unreviewed
+- id: rl.bearing-hours
+  equations:
+  - h_life = l10/n_out
+  params:
+  - cmp.bearing-1#l10
+  - cmp.bearing-1#n_out
+  - cmp.bearing-1#h_life
+  source:
+    kind: textbook
+    ref: Shigley's, life to hours conversion (SI-base evaluation)
+  review:
+    status: unreviewed
+requirements:
+- id: rq.bearing-life
+  condition: h_life >= 5000
+  params:
+  - cmp.bearing-1#h_life
+  owner: fleet service plan
+  rationale: 5000 h between service intervals; currently violated on purpose to demo flags
+  mode: required
+  source:
+    kind: standard
+    ref: internal house standard DS-2019 clause 4.6
+  review:
+    status: unreviewed
+unknowns:
+- id: uk.lubrication
+  description: 'Lubrication grade and film thickness are unresolved; the oil supplier must confirm viscosity grade before
+    life claims carry weight.
+
+    '
+  blocks:
+  - cmp.bearing-1#h_life

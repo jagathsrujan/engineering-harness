@@ -1,0 +1,165 @@
+component:
+  id: cmp.shaft-1
+  name: Input shaft
+  description: 'Input shaft with combined bending and torsion, evaluated with the internal von Mises equivalent stress. Bending
+    arm is the distance from bearing mid-plane to the gear mid-plane.
+
+    '
+  ports:
+  - id: cmp.shaft-1#p-port-torque
+    role: flow
+    unit: N*m
+parameters:
+- id: cmp.shaft-1#d_shaft
+  symbol: d_shaft
+  unit: mm
+  value: 25.0
+  provenance:
+    tag: assumed
+    note: first-cut diameter; key-envelope check pending
+- id: cmp.shaft-1#lever_a
+  symbol: lever_a
+  unit: mm
+  value: 40.0
+  provenance:
+    tag: stated
+    note: layout dimension from housing sketch
+- id: cmp.shaft-1#sigma_y
+  symbol: sigma_y
+  unit: MPa
+  value: 650.0
+  provenance:
+    tag: looked-up
+    source: steel data table, 42CrMo4 QT
+- id: cmp.shaft-1#m_b
+  symbol: m_b
+  unit: N*m
+  value: null
+  provenance:
+    tag: computed
+  description: Bending moment at the gear plane.
+- id: cmp.shaft-1#sigma_b
+  symbol: sigma_b
+  unit: MPa
+  value: null
+  provenance:
+    tag: computed
+  description: Nominal bending stress.
+- id: cmp.shaft-1#tau
+  symbol: tau
+  unit: MPa
+  value: null
+  provenance:
+    tag: computed
+  description: Nominal torsional shear stress.
+- id: cmp.shaft-1#sigma_e
+  symbol: sigma_e
+  unit: MPa
+  value: null
+  provenance:
+    tag: computed
+  description: von Mises equivalent stress.
+- id: cmp.shaft-1#n_sf
+  symbol: n_sf
+  unit: ''
+  value: null
+  provenance:
+    tag: computed
+  description: Safety factor against yield.
+relations:
+- id: rl.shaft-bending
+  equations:
+  - m_b = f_t*lever_a
+  params:
+  - cmp.gear-stage#f_t
+  - cmp.shaft-1#lever_a
+  - cmp.shaft-1#m_b
+  source:
+    kind: inline
+    ref: M = F*a
+  review:
+    status: unreviewed
+- id: rl.bending-stress
+  equations:
+  - sigma_b = 32*m_b/(pi*d_shaft**3)
+  params:
+  - cmp.shaft-1#m_b
+  - cmp.shaft-1#d_shaft
+  - cmp.shaft-1#sigma_b
+  valid_domain:
+    cmp.shaft-1#d_shaft:
+    - 5.0
+    - 200.0
+  source:
+    kind: textbook
+    ref: Shigley's, bending of a solid round shaft
+  review:
+    status: unreviewed
+- id: rl.torsion-stress
+  equations:
+  - tau = 16*t1/(pi*d_shaft**3)
+  params:
+  - cmp.gear-stage#t1
+  - cmp.shaft-1#d_shaft
+  - cmp.shaft-1#tau
+  valid_domain:
+    cmp.shaft-1#d_shaft:
+    - 5.0
+    - 200.0
+  source:
+    kind: textbook
+    ref: Shigley's, torsion of a solid round shaft
+  review:
+    status: unreviewed
+- id: rl.von-mises
+  equations:
+  - sigma_e = sqrt(sigma_b**2 + 3*tau**2)
+  params:
+  - cmp.shaft-1#sigma_b
+  - cmp.shaft-1#tau
+  - cmp.shaft-1#sigma_e
+  source:
+    kind: textbook
+    ref: Shigley's, distortion-energy theory
+  review:
+    status: unreviewed
+- id: rl.shaft-safety-factor
+  equations:
+  - n_sf = sigma_y/sigma_e
+  params:
+  - cmp.shaft-1#sigma_y
+  - cmp.shaft-1#sigma_e
+  - cmp.shaft-1#n_sf
+  source:
+    kind: inline
+    ref: safety factor definition
+  review:
+    status: unreviewed
+constraints:
+- id: cs.shaft-envelope
+  expression: d_shaft <= 22
+  params:
+  - cmp.shaft-1#d_shaft
+  severity: error
+  source:
+    kind: standard
+    ref: catalogue gear-blank bore, 22 mm
+  review:
+    status: unreviewed
+  description: 'Deliberately violated: the first-cut 25 mm shaft does not fit the 22 mm bore of our stock gear blanks, demonstrating
+    flag propagation.
+
+    '
+requirements:
+- id: rq.shaft-safety
+  condition: n_sf >= 2.0
+  params:
+  - cmp.shaft-1#n_sf
+  owner: design office
+  rationale: shaft yield margin 2.0 per house standard until fatigue data exists
+  mode: required
+  source:
+    kind: standard
+    ref: internal house standard DS-2019 clause 4.4
+  review:
+    status: unreviewed

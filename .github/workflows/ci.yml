@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "core/**"
+      - "projects/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "core/**"
+      - "projects/**"
+      - ".github/workflows/ci.yml"
+
+jobs:
+  python:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.12"]
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Lint
+        run: uv run ruff check .
+      - name: Type check
+        run: uv run mypy
+      - name: Test
+        run: uv run pytest -q
+      - name: Gearbox demo solves
+        run: uv run harness verify ../projects/gearbox-demo; echo "verify exited $? (expected 1: deliberately violated demo constraint)"

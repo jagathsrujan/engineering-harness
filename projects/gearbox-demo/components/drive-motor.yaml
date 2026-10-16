@@ -1,0 +1,50 @@
+component:
+  id: cmp.drive-motor
+  name: Drive motor
+  description: Prime mover on the gearbox input shaft.
+  ports:
+  - id: cmp.drive-motor#p-port-torque
+    role: flow
+    unit: N*m
+  - id: cmp.drive-motor#p-port-speed
+    role: potential
+    unit: rad/s
+parameters:
+- id: cmp.drive-motor#p_in
+  symbol: p_in
+  unit: kW
+  value: 5.0
+  provenance:
+    tag: stated
+    note: nameplate of the selected 5 kW servo motor
+  description: Imposed motor power at rated duty.
+- id: cmp.drive-motor#n_in
+  symbol: n_in
+  unit: rpm
+  value: 1450.0
+  provenance:
+    tag: stated
+    note: catalogue rated speed of the selected motor
+  description: Imposed motor speed.
+- id: cmp.drive-motor#omega_in
+  symbol: omega_in
+  unit: rad/s
+  value: null
+  provenance:
+    tag: computed
+  description: Input angular speed.
+relations:
+- id: rl.omega-in
+  equations:
+  - omega_in = n_in
+  params:
+  - cmp.drive-motor#n_in
+  - cmp.drive-motor#omega_in
+  source:
+    kind: inline
+    ref: 'kinematics (SI-base evaluation: rpm parameter converts to rad/s)'
+  review:
+    status: reviewed
+    reviewer: owner
+    at: '2026-10-16'
+    graph_version: v0.1

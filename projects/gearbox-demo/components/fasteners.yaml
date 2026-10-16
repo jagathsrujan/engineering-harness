@@ -1,0 +1,39 @@
+component:
+  id: cmp.fasteners
+  name: Foundation fasteners
+  description: Anchor bolts joining the gearbox to the bedplate; preload from property-class yield.
+parameters:
+- id: cmp.fasteners#a_s
+  symbol: a_s
+  unit: mm^2
+  value: 58.0
+  provenance:
+    tag: looked-up
+    source: Shigley's, stress area table for M10
+- id: cmp.fasteners#sigma_y_bolt
+  symbol: sigma_y_bolt
+  unit: MPa
+  value: 640.0
+  provenance:
+    tag: looked-up
+    source: Shigley's, property class 8.8 bolt strength
+- id: cmp.fasteners#f_i
+  symbol: f_i
+  unit: N
+  value: null
+  provenance:
+    tag: computed
+  description: Preload force per bolt.
+relations:
+- id: rl.preload
+  equations:
+  - f_i = 0.7*a_s*sigma_y_bolt
+  params:
+  - cmp.fasteners#a_s
+  - cmp.fasteners#sigma_y_bolt
+  - cmp.fasteners#f_i
+  source:
+    kind: textbook
+    ref: Shigley's, bolt preload from yield fraction
+  review:
+    status: unreviewed
