@@ -27,8 +27,9 @@ _MAIN_FILE = "main.yaml"
 _PROJECT_PREFIX = "prj."
 
 
-def load_project(path: Path) -> Project:
-    root = (path if path.is_dir() else path.parent).resolve()
+def load_project(path: Path | str) -> Project:
+    location = Path(path)
+    root = (location if location.is_dir() else location.parent).resolve()
     main_path = root / _MAIN_FILE
     try:
         data = _yaml(main_path)
